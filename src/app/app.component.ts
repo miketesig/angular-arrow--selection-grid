@@ -16,8 +16,9 @@ import {
   selector: 'my-app',
   template: `
         <div class="example-config">
-            <input #findThis (keyup)="handleKeyup($event)" placeholder="trova..." [(ngModel)]="filterText">
+            <input #findThis (keyup)="handleKeyup($event)" placeholder="find..." [(ngModel)]="filterText">
             <pre>Selected: {{this.selectedItem?.ProductName}}</pre>
+            <pre>this.mySelection: {{this.mySelection}}</pre>
         </div>
 
         <kendo-grid 
@@ -26,11 +27,13 @@ import {
         [pageable]="false"
         [navigable]="true"
         [height]="500"
-        [selectable]="selectableSettings"
+        [selectable]="{enabled: true, mode: 'single'}"
         kendoGridSelectBy="ProductID"
         [(selectedKeys)]="mySelection"
+        (selectedKeysChange)="selectId($event)"
         (selectionChange)="changeSelection($event)"
-        (dblclick)="onDblClick($event)"       
+        (dblclick)="onDblClick($event)"
+        #grid       
         >
             <kendo-grid-column field="ProductName" title="Product Name" [width]="150"> </kendo-grid-column>
             <kendo-grid-column field="FirstOrderedOn" title="First Ordered On" [width]="240" filter="date" format="{0:d}">
@@ -54,14 +57,12 @@ import {
 })
 export class AppComponent {
   @ViewChild('findThis', { static: false }) findThis: ElementRef;
+  @ViewChild('grid') public grid: GridComponent;
   public gridView: GridDataResult;
   public items: any[] = sampleProducts;
   public mySelection: number[] = [1];
   public pageSize = 500;
   public skip = 0;
-  public selectableSettings: SelectableSettings = {
-    mode: 'single',
-  };
   public filterText;
   public selectedItem;
 
@@ -74,10 +75,16 @@ export class AppComponent {
     //this.findThis?.nativeElement.focus();
   }
 
+  //funziona sul click singolo sulla riga (selezione)
+  selectId(e) {
+    console.log('selectId', e);
+  }
+
+  //funziona sul click singolo sulla riga (selezione)
   changeSelection(item) {
     if (item.selectedRows[0]) {
       this.selectedItem = item.selectedRows[0].dataItem;
-      console.log(item.selectedRows[0].dataItem);
+      console.log('changeSelection', item.selectedRows[0].dataItem);
     }
   }
 
