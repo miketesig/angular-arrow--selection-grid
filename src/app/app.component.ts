@@ -17,17 +17,20 @@ import {
   template: `
         <div class="example-config">
             <input #findThis (keyup)="handleKeyup($event)" placeholder="trova..." [(ngModel)]="filterText">
-            <pre>Selected: {{this.gridView.data[0].ProductName}}</pre>
+            <pre>Selected: {{this.selectedItem?.ProductName}}</pre>
         </div>
 
         <kendo-grid 
         [data]="gridView"
         [skip]="skip"
         [pageable]="false"
+        [navigable]="true"
         [height]="500"
         [selectable]="selectableSettings"
         kendoGridSelectBy="ProductID"
-        [(selectedKeys)]="mySelection"       
+        [(selectedKeys)]="mySelection"
+        (selectionChange)="changeSelection($event)"
+        (dblclick)="onDblClick($event)"       
         >
             <kendo-grid-column field="ProductName" title="Product Name" [width]="150"> </kendo-grid-column>
             <kendo-grid-column field="FirstOrderedOn" title="First Ordered On" [width]="240" filter="date" format="{0:d}">
@@ -46,9 +49,6 @@ import {
                 display: flex;
                 flex-direction: column;
             }
-            kendo-grid{
-                pointer-events: none;//niente click dall'utonto
-            } 
         `,
   ],
 })
@@ -63,6 +63,7 @@ export class AppComponent {
     mode: 'single',
   };
   public filterText;
+  public selectedItem;
 
   constructor() {
     this.loadItems();
@@ -71,6 +72,17 @@ export class AppComponent {
   ngAfterViewInit() {
     //disabilitare se si vuole editare roba qui
     //this.findThis?.nativeElement.focus();
+  }
+
+  changeSelection(item) {
+    if (item.selectedRows[0]) {
+      this.selectedItem = item.selectedRows[0].dataItem;
+      console.log(item.selectedRows[0].dataItem);
+    }
+  }
+
+  onDblClick(e) {
+    console.log('Double click-->close the window (maybe)');
   }
 
   private loadItems(): void {
@@ -87,29 +99,48 @@ export class AppComponent {
   };
 
   handleKeyup(event) {
-    if (event.key === 'ArrowUp') {
-      this.skip = Math.max(0, this.skip - 1);
-      if (this.filterText) {
+    switch (event.key) {
+      case 'ArrowUp': {
+        this.skip = Math.max(0, this.skip - 1);
+        if (this.filterText) {
+          this.applyFilter(this.filterText);
+        } else {
+          this.loadItems();
+        }
+        this.mySelection = [this.gridView.data[0].ProductID];
+        break;
+      }
+
+      case 'ArrowDown': {
+        if (this.gridView.data.length === 1) {
+          return;
+        }
+        this.skip++;
+        if (this.filterText) {
+          this.applyFilter(this.filterText);
+        } else {
+          this.loadItems();
+        }
+        this.mySelection = [this.gridView.data[0].ProductID];
+        break;
+      }
+
+      case 'Enter': {
+        if (this.gridView.data[0]) {
+          this.selectedItem = this.gridView.data[0];
+        }
+        break;
+      }
+
+      case 'ArrowLeft':
+        break;
+      case 'ArrowRight':
+        break;
+
+      default: {
         this.applyFilter(this.filterText);
-      } else {
-        this.loadItems();
+        break;
       }
-      this.mySelection = [this.gridView.data[0].ProductID];
-    } else if (event.key === 'ArrowDown') {
-      if (this.gridView.data.length === 1) {
-        return;
-      }
-      this.skip++;
-      if (this.filterText) {
-        this.applyFilter(this.filterText);
-      } else {
-        this.loadItems();
-      }
-      this.mySelection = [this.gridView.data[0].ProductID];
-    } else if (event.key === 'Enter') {
-      console.log('Selected: ', this.gridView.data[0]);
-    } else {
-      this.applyFilter(this.filterText);
     }
   }
 
